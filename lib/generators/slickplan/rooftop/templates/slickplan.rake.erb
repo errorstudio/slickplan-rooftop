@@ -1,0 +1,55 @@
+require 'rooftop'
+require 'slickplan'
+require 'open-uri'
+require 'terminal-table'
+
+namespace :slickplan do
+
+    desc "List all the templates in the XML file, and return the list, and the page-template mapping"
+    task :list_templates, [:xml] do |task, options|
+        @sitemap = Slickplan::Parser::XML.parse(File.open(File.expand_path(options[:xml])).read)
+
+        table = Terminal::Table.new title: "#{@sitemap.count} templates to create"
+        @sitemap.templates.each do |t|
+            table.add_row(t.name)
+        end
+
+        puts table
+
+        puts "***********************************************************"
+        puts "and here are the page templates to set:"
+        puts "***********************************************************"
+        @sitemap.pages.each do |p|
+            puts "#{p.title} - #{p.template.try(:name)}"
+        end
+
+    end
+
+    desc "Generate pages from an xml file, optionally stubbing the content with HTMLIpsum"
+    task :generate_pages, [:xml] => :environment do |task, options|
+        @sitemap = Slickplan::Parser::XML.parse(File.open(File.expand_path(options[:xml])).read)
+        content = open('https://gist.githubusercontent.com/andyError/490c3135bd1defda69a1/raw/cd507c5a99e79b3218c274e00963cf90fdd883d8/gistfile1.txt').read
+        # iterate through and create the pages, saving the rt page id to the @sitemap.pages collection
+        @sitemap.pages.each do |page|
+            puts "Generating page #{page.title}"
+            new_page = Page.create(title: page.title, content: {basic: {content: content || page.content}}, status: 'publish', template: page.template.try(:name))
+            page.rooftop_id = new_page.id
+        end
+
+        #iterate through again, setting parents properly
+        puts "Setting heirarcy..."
+        @sitemap.pages.each do |page|
+            new_page = Page.find(id: page.rooftop_id)
+            parent = @sitemap.pages.find { |p| p.id == page.parent_id }
+            if parent.present?
+                new_page.parent = parent.rooftop_id
+                new_page.save
+            end
+        end
+
+        puts "Done."
+
+        Rake::Task['slickplan:list_templates'].invoke(options[:xml])
+
+    end
+end
