@@ -11,7 +11,7 @@ namespace :slickplan do
 
         table = Terminal::Table.new title: "#{@sitemap.count} templates to create"
         @sitemap.templates.each do |t|
-            table.add_row(t.name)
+            table.add_row([t.name])
         end
 
         puts table
@@ -20,7 +20,7 @@ namespace :slickplan do
         puts "and here are the page templates to set:"
         puts "***********************************************************"
         @sitemap.pages.each do |p|
-            puts "#{p.title} - #{p.template.try(:name)}"
+            puts "#{p.title} [#{p.template.try(:name)}]"
         end
 
     end
