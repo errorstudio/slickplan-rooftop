@@ -49,7 +49,7 @@ namespace :slickplan do
 
         puts "Generating templates in Rails"
         @sitemap.templates.each do |template|
-            `rails g rooftop:template #{template.parameterize.underscore}`
+            `rails g rooftop:template #{template.name.parameterize.underscore}`
         end
         puts "Done."
 
