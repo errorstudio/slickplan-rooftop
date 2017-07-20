@@ -32,7 +32,7 @@ namespace :slickplan do
         # iterate through and create the pages, saving the rt page id to the @sitemap.pages collection
         @sitemap.pages.each do |page|
             puts "Generating page #{page.title}"
-            new_page = Page.create(title: page.title, content: {basic: {content: content || page.content}}, status: 'publish', template: page.template.try(:name))
+            new_page = Page.create(title: page.title, content: {basic: {content: content || page.content}}, status: 'publish')
             page.rooftop_id = new_page.id
         end
 
@@ -47,6 +47,10 @@ namespace :slickplan do
             end
         end
 
+        puts "Generating templates in Rails"
+        @sitemap.templates.each do |template|
+            `rails g rooftop:template #{template.parameterize.underscore}`
+        end
         puts "Done."
 
         Rake::Task['slickplan:list_templates'].invoke(options[:xml])
